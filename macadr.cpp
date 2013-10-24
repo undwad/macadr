@@ -99,11 +99,26 @@
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
 		addr.sin_addr = *((in_addr *)host->h_addr);
-		if(connect(sock.socket, (sockaddr*)&addr, sizeof(sockaddr)) < 0)
-			return luaL_error(L, "connect() failed");
+		//if(connect(sock.socket, (sockaddr*)&addr, sizeof(sockaddr)) < 0)
+			//return luaL_error(L, "connect() failed");
+		connect(sock.socket, (sockaddr*)&addr, sizeof(sockaddr));
 
-		fcntl(sock.socket, F_SETFL, O_NONBLOCK);
+		fd_set fdset;
+		timeval tv = {0};
+		tv.tv_sec = 5;
+		FD_ZERO(&fdset);
+		FD_SET(sock, &fdset);
 
+		if(1 != select(sock.socket + 1, nullptr, &fdset, nullptr, &tv) == 1)
+			return luaL_error(L, "select() failed");
+
+		int error = 0;
+		socklen_t len = sizeof(error);
+		getsockopt(sock.socket, SOL_SOCKET, SO_ERROR, &error, &len);
+		if(error)
+			return luaL_error(L, "select() failed with error %d", error);
+
+		fcntl(sock.socket, F_SETFL, 0);
 		for(int i = 0; i < attempts; i++)
 		{
 			unsigned char data[64];
@@ -143,6 +158,7 @@
 
 		if(!result)
 			return luaL_error(L, "%d attempts are over", attempts);
+
 	luaM_func_end
 
 #elif defined(OSX)
