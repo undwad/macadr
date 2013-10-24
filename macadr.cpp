@@ -99,6 +99,8 @@
 		if(connect(sock.socket, (sockaddr*)&addr, sizeof(sockaddr)) < 0)
 			return luaL_error(L, "connect() failed");
 
+		fcntl(sock.socket, F_SETFL, O_NONBLOCK);
+
 		for(int i = 0; i < attempts; i++)
 		{
 			unsigned char data[64];
