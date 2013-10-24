@@ -20,4 +20,6 @@ printmac{ip='192.168.10.9', port=80}
 printmac{ip='192.168.10.84', port=80}
 
 -- note that port parameter is necessary on linux but is not used on windows
--- also on linux there is optional attempts parameter that specifies the number of attempts to read in search of packet with mac address
+-- also on linux there are optional parameters attempts and timeout 
+-- attempts parameter specifies the number of attempts to read in search of packet with mac address
+-- timeout parameter specifies the connect timeout in seconds

@@ -80,6 +80,7 @@
 		luaM_reqd_param(string, ip)
 		luaM_reqd_param(unsigned, port)
 		luaM_opt_param(unsigned, attempts, 1000)
+		luaM_opt_param(unsigned, timeout, 5)
 
 		auto_socket_closer rawsock(socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP)));
 		if(rawsock.socket < 0)
@@ -105,9 +106,9 @@
 
 		fd_set fdset;
 		timeval tv = {0};
-		tv.tv_sec = 5;
+		tv.tv_sec = timeout;
 		FD_ZERO(&fdset);
-		FD_SET(sock, &fdset);
+		FD_SET(sock.socket, &fdset);
 
 		if(1 != select(sock.socket + 1, nullptr, &fdset, nullptr, &tv) == 1)
 			return luaL_error(L, "select() failed");
@@ -119,6 +120,7 @@
 			return luaL_error(L, "select() failed with error %d", error);
 
 		fcntl(sock.socket, F_SETFL, 0);
+
 		for(int i = 0; i < attempts; i++)
 		{
 			unsigned char data[64];
