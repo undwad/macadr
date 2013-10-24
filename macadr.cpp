@@ -64,63 +64,73 @@
 #	include <netdb.h>
 #	include <netinet/if_ether.h>
 
-	luaM_func_begin(connect)
+	struct auto_socket_closer
+	{
+		int socket;
+		auto_socket_closer(int s) : socket(s) { }
+		~auto_socket_closer() 
+		{ 
+			if(socket >= 0) 
+				close(socket); 
+		}
+	};
+
+	luaM_func_begin(read)
 		luaM_reqd_param(string, ip)
-		luaM_opt_param(unsigned, port, 22)
+		luaM_reqd_param(unsigned, port, 80)
 		luaM_opt_param(unsigned, attempts, 10)
-		int rawsock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP));
-		if(rawsock >= 0)
+
+		auto_socket_closer rawsock(socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP)));
+		if(rawsock.socket < 0)
+			return luaL_error(L, "raw socket() failed");
+
+		hostent *host = gethostbyname(ip);
+		if(!host)
+			return luaL_error(L, "gethostbyname failed");
+
+		auto_socket_closer sock(socket(AF_INET, SOCK_STREAM, 0));
+		if(sock.socket < 0)
+			return luaL_error(L, "socket() failed");
+
+		sockaddr_in addr = {0};
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		addr.sin_addr = *((in_addr *)host->h_addr);
+		if(connect(sock.socket, (sockaddr*)&addr, sizeof(sockaddr)) < 0)
+			return luaL_error(L, "connect() failed");
+
+		for(int i = 0; i < attempts; i++)
 		{
-			if(hostent *host = gethostbyname(ip))
+			unsigned char data[64];
+			unsigned char* buf = data;
+
+			while(buf - data <= 34)
 			{
-				int sock = socket(AF_INET, SOCK_STREAM, 0);
-				if(sock >= 0)
+				int n = recvfrom(rawsock.socket, buf, sizeof(data) - (buf - data), 0, nullptr, nullptr);
+				if(n < 0)
+					return luaL_error(L, "recvfrom() failed");
+				buf += n;
+			}
+
+			if(buf - data > 34)
+			{
+				buf = data + 14;
+				if(0x45 == *buf)
 				{
-					sockaddr_in addr = {0};
-					addr.sin_family = AF_INET;
-					addr.sin_port = htons(port);
-					addr.sin_addr = *((in_addr *)host->h_addr);
-					if (connect(sock, (sockaddr*)&addr, sizeof(sockaddr)) >= 0)
+					int idx = -1;
+					if(0 == memcmp(buf + 12, &addr.sin_addr, sizeof(addr.sin_addr)))
+						idx = 0;
+					if(0 == memcmp(buf + 16, &addr.sin_addr, sizeof(addr.sin_addr)))
+						idx = 6;
+					if(idx >= 0)
 					{
-						for(int i = 0; i < attempts; i++)
-						{
-							unsigned char data[64];
-							unsigned char* buf = data;
-
-							while(buf - data <= 34)
-							{
-								int n = recvfrom(rawsock, buf, sizeof(data) - (buf - data), 0, nullptr, nullptr);
-								if(n < 0)
-									break;
-								buf += n;
-							}
-
-							if(buf - data > 34)
-							{
-								buf = data + 14;
-								if(0x45 == *buf)
-								{
-									printf("%X %X %X\n", addr.sin_addr, *(in_addr*)(buf + 12), *(in_addr*)(buf + 16));
-									int idx = -1;
-									if(0 == memcmp(buf + 12, &addr.sin_addr, sizeof(addr.sin_addr)))
-										idx = 0;
-									if(0 == memcmp(buf + 16, &addr.sin_addr, sizeof(addr.sin_addr)))
-										idx = 6;
-									if(idx >= 0)
-									{
-										char mac[32] = {0};
-										sprintf(mac, "%02X-%02X-%02X-%02X-%02X-%02X", data[idx], data[idx + 1], data[idx + 2], data[idx + 3], data[idx + 4], data[idx + 5]);
-										luaM_return(string, mac)
-										break;
-									}
-								}
-							}
-						}
+						char mac[32] = {0};
+						sprintf(mac, "%02X-%02X-%02X-%02X-%02X-%02X", data[idx], data[idx + 1], data[idx + 2], data[idx + 3], data[idx + 4], data[idx + 5]);
+						luaM_return(string, mac)
+						break;
 					}
-					close(sock);
 				}
 			}
-			close(rawsock);
 		}
 	luaM_func_end
 

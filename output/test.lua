@@ -8,7 +8,6 @@ pprint(macadr) -- print conf0 module to see what we have
 
 function printmac(ip) print(ip, pcall(macadr.read, {ip = ip})) end
 
-printmac('192.168.10.83')
 printmac('192.168.10.84')
 printmac('192.168.10.97')
 printmac('192.168.10.174')
