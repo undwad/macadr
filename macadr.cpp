@@ -63,6 +63,7 @@
 #	include <netinet/in.h>
 #	include <netdb.h>
 #	include <netinet/if_ether.h>
+#	include <fcntl.h>
 
 	struct auto_socket_closer
 	{
