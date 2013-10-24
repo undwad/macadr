@@ -1,0 +1,4 @@
+LIBRARY macadr.dll
+DESCRIPTION "mac address reader for lua"
+EXPORTS
+luaopen_macadr
