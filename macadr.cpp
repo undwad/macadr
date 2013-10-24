@@ -93,6 +93,8 @@
 		if(sock.socket < 0)
 			return luaL_error(L, "socket() failed");
 
+		fcntl(sock.socket, F_SETFL, O_NONBLOCK);
+
 		sockaddr_in addr = {0};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
