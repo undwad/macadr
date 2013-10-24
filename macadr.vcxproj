@@ -62,7 +62,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\lib\x86</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>conf0.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>macadr.def</ModuleDefinitionFile>
       <AdditionalDependencies>liblua52.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -83,18 +83,18 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\lib\x86</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>conf0.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>macadr.def</ModuleDefinitionFile>
       <AdditionalDependencies>liblua52.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="conf0.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="conf0.def" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="luaM.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="macadr.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="macadr.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

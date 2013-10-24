@@ -37,15 +37,28 @@
 #	include <winsock2.h> 
 #	include <iphlpapi.h> 
 #	pragma comment(lib, "ws2_32.lib")
+#	pragma comment(lib, "iphlpapi.lib")
 
 	luaM_func_begin(read)
-		//luaM_reqd_param(function, callback)
+		luaM_reqd_param(string, ip)
 		//lua_rawgeti(L, LUA_REGISTRYINDEX, callback);
 		//lua_newtable(L); 
 		//int error = lua_pcall(L, 1, 0, 0);
 		//luaL_unref(L, LUA_REGISTRYINDEX, callback);
 		//if(error)
 		//	return lua_error(L);
+		IPAddr addr = inet_addr(ip);
+		unsigned char mac[6];
+		ULONG len = sizeof(mac);
+		DWORD err = SendARP(addr, 0, mac, &len);
+		if(NO_ERROR == err)
+		{
+			char str[32] = {0};
+			sprintf(str, "%02X-%02X-%02X-%02X-%02X-%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); 
+			luaM_return(string, str)
+		}
+		else
+			return luaL_error(L, "SendARP failed with error %d", err);
 	luaM_func_end
 
 #elif defined(LINUX)
@@ -78,7 +91,7 @@
 static const struct luaL_Reg lib[] =
 {
 	//{"savestack", luaM_save_stack},
-	{"connect", connect},
+	{"read", read},
     {nullptr, nullptr},
 };
 
