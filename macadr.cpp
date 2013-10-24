@@ -67,7 +67,7 @@
 	luaM_func_begin(connect)
 		luaM_reqd_param(string, ip)
 		luaM_opt_param(unsigned, port, 22)
-		luaM_opt_count(unsigned, count, 10)
+		luaM_opt_param(unsigned, attempts, 10)
 		int rawsock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP));
 		if(rawsock >= 0)
 		{
@@ -82,9 +82,8 @@
 					addr.sin_addr = *((in_addr *)host->h_addr);
 					if (connect(sock, (sockaddr*)&addr, sizeof(sockaddr)) >= 0)
 					{
-						while (true)
+						for(int i = 0; i < attempts; i++)
 						{
-							int n;
 							unsigned char data[64];
 							unsigned char* buf = data;
 
