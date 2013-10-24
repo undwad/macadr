@@ -41,12 +41,6 @@
 
 	luaM_func_begin(read)
 		luaM_reqd_param(string, ip)
-		//lua_rawgeti(L, LUA_REGISTRYINDEX, callback);
-		//lua_newtable(L); 
-		//int error = lua_pcall(L, 1, 0, 0);
-		//luaL_unref(L, LUA_REGISTRYINDEX, callback);
-		//if(error)
-		//	return lua_error(L);
 		IPAddr addr = inet_addr(ip);
 		unsigned char mac[6];
 		ULONG len = sizeof(mac);
@@ -63,23 +57,72 @@
 
 #elif defined(LINUX)
 
-#   include <unistd.h>
+#	include <unistd.h>
+#	include <sys/socket.h>
+#	include <sys/types.h>
+#	include <netinet/in.h>
+#	include <netdb.h>
+#	include <netinet/if_ether.h>
 
 	luaM_func_begin(connect)
-		luaM_opt_param(integer, flags, 0)
-		luaM_reqd_param(function, callback)
-		luaM_return_userdata(context_t, init, context, L, callback, nullptr)
-        if(context->poll = avahi_simple_poll_new())
-        {
-            int error;
-            if(context->client = avahi_client_new(avahi_simple_poll_get(context->poll), flags, client_callback, context, &error))
-            {
-            }
-            else
-                return luaL_error(L, avahi_strerror(error));
-        }
-        else
-            return luaL_error(L, "avahi_simple_poll_new() failed");
+		luaM_reqd_param(string, ip)
+		luaM_opt_param(unsigned, port, 22)
+		luaM_opt_count(unsigned, count, 10)
+		int rawsock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP));
+		if(rawsock >= 0)
+		{
+			if(hostent *host = gethostbyname(ip))
+			{
+				int sock = socket(AF_INET, SOCK_STREAM, 0);
+				if(sock >= 0)
+				{
+					sockaddr_in addr = {0};
+					addr.sin_family = AF_INET;
+					addr.sin_port = htons(port);
+					addr.sin_addr = *((in_addr *)host->h_addr);
+					if (connect(sock, (sockaddr*)&addr, sizeof(sockaddr)) >= 0)
+					{
+						while (true)
+						{
+							int n;
+							unsigned char data[64];
+							unsigned char* buf = data;
+
+							while(buf - data <= 34)
+							{
+								int n = recvfrom(rawsock, buf, sizeof(data) - (buf - data), 0, nullptr, nullptr);
+								if(n < 0)
+									break;
+								buf += n;
+							}
+
+							if(buf - data > 34)
+							{
+								buf = data + 14;
+								if(0x45 == *buf)
+								{
+									printf("%X %X %X\n", addr.sin_addr, *(in_addr*)(buf + 12), *(in_addr*)(buf + 16));
+									int idx = -1;
+									if(0 == memcmp(buf + 12, &addr.sin_addr, sizeof(addr.sin_addr)))
+										idx = 0;
+									if(0 == memcmp(buf + 16, &addr.sin_addr, sizeof(addr.sin_addr)))
+										idx = 6;
+									if(idx >= 0)
+									{
+										char mac[32] = {0};
+										sprintf(mac, "%02X-%02X-%02X-%02X-%02X-%02X", data[idx], data[idx + 1], data[idx + 2], data[idx + 3], data[idx + 4], data[idx + 5]);
+										luaM_return(string, mac)
+										break;
+									}
+								}
+							}
+						}
+					}
+					close(sock);
+				}
+			}
+			close(rawsock);
+		}
 	luaM_func_end
 
 #elif defined(OSX)

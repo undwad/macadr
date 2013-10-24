@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-set (PROJECT conf0)
+set (PROJECT macadr)
 project (${PROJECT})
 
 SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fpermissive")
@@ -13,24 +13,16 @@ if (LUA_FOUND)
   message(${LUA_INCLUDE_DIR})
   message(${LUA_LIBRARY})
 endif (LUA_FOUND)
-
-FIND_PACKAGE(AVAHI)
-if (AVAHI_FOUND)
-  message("AVAHI was found!")
-  message(${AVAHI_INCLUDE_DIRS})
-  message(${AVAHI_LIBRARIES})
-endif (AVAHI_FOUND)
-
 file (GLOB FILES
 	"*.h"
 	"*.c"
 	"*.cpp"
 )
 
-include_directories(${LUA_INCLUDE_DIR} ${AVAHI_INCLUDE_DIRS})
+include_directories(${LUA_INCLUDE_DIR})
 
 add_library(${PROJECT} SHARED ${FILES})
 
-target_link_libraries (${PROJECT} ${LUA_LIBRARY} ${AVAHI_LIBRARIES})
+target_link_libraries (${PROJECT} ${LUA_LIBRARY})
 
 
