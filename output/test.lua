@@ -6,8 +6,18 @@ require 'macadr' -- load browse function from browse0conf module
 
 pprint(macadr) -- print conf0 module to see what we have
 
-function printmac(ip) print(ip, pcall(macadr.read, {ip = ip})) end
+--function executes macadr.read with params i safe mode and prints both request and result
+function printmac(params) print(params, pcall(macadr.read, params)) end
 
-printmac('192.168.10.84')
-printmac('192.168.10.97')
-printmac('192.168.10.174')
+printmac{ip='192.168.10.83', port=22}
+printmac{ip='192.168.10.97', port=80}
+printmac{ip='192.168.10.174', port=80}
+printmac{ip='192.168.10.100', port=80}
+printmac{ip='192.168.10.101', port=80}
+printmac{ip='192.168.10.95', port=80}
+printmac{ip='192.168.10.2', port=80}
+printmac{ip='192.168.10.9', port=80}
+printmac{ip='192.168.10.84', port=80}
+
+-- note that port parameter is necessary on linux but is not used on windows
+-- also on linux there is optional attempts parameter that specifies the number of attempts to read in search of packet with mac address

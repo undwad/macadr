@@ -77,8 +77,8 @@
 
 	luaM_func_begin(read)
 		luaM_reqd_param(string, ip)
-		luaM_reqd_param(unsigned, port, 80)
-		luaM_opt_param(unsigned, attempts, 10)
+		luaM_reqd_param(unsigned, port)
+		luaM_opt_param(unsigned, attempts, 1000)
 
 		auto_socket_closer rawsock(socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP)));
 		if(rawsock.socket < 0)
@@ -117,13 +117,16 @@
 				buf = data + 14;
 				if(0x45 == *buf)
 				{
+					//printf("%X %X %X\n", addr.sin_addr, *(in_addr*)(buf + 12), *(in_addr*)(buf + 16)); 
 					int idx = -1;
 					if(0 == memcmp(buf + 12, &addr.sin_addr, sizeof(addr.sin_addr)))
-						idx = 0;
-					if(0 == memcmp(buf + 16, &addr.sin_addr, sizeof(addr.sin_addr)))
 						idx = 6;
+					else if(0 == memcmp(buf + 16, &addr.sin_addr, sizeof(addr.sin_addr)))
+						idx = 0;
 					if(idx >= 0)
 					{
+						//printf("0 %02X-%02X-%02X-%02X-%02X-%02X \n", data[0], data[1], data[2], data[3], data[4], data[5]);
+						//printf("6 %02X-%02X-%02X-%02X-%02X-%02X \n", data[6], data[7], data[8], data[9], data[10], data[11]);
 						char mac[32] = {0};
 						sprintf(mac, "%02X-%02X-%02X-%02X-%02X-%02X", data[idx], data[idx + 1], data[idx + 2], data[idx + 3], data[idx + 4], data[idx + 5]);
 						luaM_return(string, mac)
@@ -132,6 +135,9 @@
 				}
 			}
 		}
+
+		if(!result)
+			return luaL_error(L, "%d attempts are over", attempts);
 	luaM_func_end
 
 #elif defined(OSX)
