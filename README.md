@@ -33,6 +33,7 @@ print(mac)
 where port, attemps and timeout are not used in windows 
 
 attempts is optional and defaults to 1000
+
 timeout is optional and defaults to 5 
 
 you can look through output/test.lua sample script for more detailed information.
